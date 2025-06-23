@@ -1,5 +1,4 @@
-# Reproduce-Sketch-Guided-Scene-Image-Generation
-# Sketch-Guided Scene Image Generation
+# Reproduce Sketch-Guided Scene Image Generation (unofficial)
 
 This repository contains the unofficial implementation of the paper "Sketch-Guided Scene Image Generation" by Tianyu Zhang, Xiaoxuan Xie, Xusheng Du, and Haoran Xie.
 
