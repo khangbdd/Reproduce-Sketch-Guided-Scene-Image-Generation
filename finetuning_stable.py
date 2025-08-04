@@ -36,7 +36,7 @@ def finetuning_sd_model(
     object_images, # tensor type
     object_masks, # image type
     object_promts,
-    num_epochs = 2,
+    num_epochs = 50,
     lr = 1e-5,
     seed: int = 42
 ):
@@ -156,7 +156,7 @@ def scene_level_construction(
     bg_prompt,
     gl_prompt,
     alpha: float = 0.8,
-    num_inference_steps: int = 10,
+    num_inference_steps: int = 50,
     device = "gpu",
     guidance_scale: float = 7.5,
     seed: int = 42

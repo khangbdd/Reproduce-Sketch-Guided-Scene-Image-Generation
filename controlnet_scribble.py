@@ -41,15 +41,14 @@ def get_sd_controlnet_local_or_download(controlnet):
     return pipe
 
 def gen_images_by_controlnet_scribble(isolated_sketch_objects, labels):
-    image = Image.open("./bicycle.png")
     controlnet = get_controlnet_local_or_download()
     pipe =  get_sd_controlnet_local_or_download(controlnet)
     gen_images = []
     object_prompts = []
-    for sketch_object, labels in zip(isolated_sketch_objects, labels):
-        prompt= f"A photo of a small Real-life {labels} with position, size, shape fit reference object"
+    for sketch_object, label in zip(isolated_sketch_objects, labels):
+        prompt= f"A photo of a small Real-life {label} with position, size, shape fit reference object"
         image = pipe(prompt, sketch_object).images[0]
-        utils.saveImage(image, folder = "objects_image", prefix = "gen_{labels}")
+        utils.saveImage(image, folder = "objects_image", prefix = f"gen_{label}")
         gen_images.append(image)
         object_prompts.append(prompt)
     return gen_images, object_prompts

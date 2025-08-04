@@ -5,39 +5,40 @@ from torchvision import transforms
 import torch
 import matplotlib.pyplot as plt
 from PIL import Image
+import argparse
+import os
+import sys
 
 device =  "cuda" if torch.cuda.is_available() else "cpu"
-image_path = "./sketches/bread_coffee.png" 
-image_size = 512
-object_prompt = ". bread . cup of tea . ."
-global_prompt = "A photo of a bread and a cup of tea in a tray."
-bg_prompt = "in a tray"
-
-preprocess = transforms.Compose(
-    [
-        transforms.Resize((image_size, image_size)),
-    ]
-)
-image_preprocess = transforms.Compose(
-    [
-        transforms.Resize((512, 512)),
-        transforms.ToTensor()
-    ]
-)
 
 def sketches_guide_scene_gen(
         sketch_path, 
         global_prompt, 
         object_prompt, 
         bg_prompt,
-        num_epochs= 2,
+        num_epochs= 50,
         lr = 1e-5,
-        alpha = 0.5,
+        alpha = 0.8,
         num_inference_steps = 50,
         guidance_scale = 7.5,
         seed=42,
         device = "cuda" if torch.cuda.is_available() else "cpu"
     ):
+    
+    # Image processing constants
+    image_size = 512
+    
+    preprocess = transforms.Compose(
+        [
+            transforms.Resize((image_size, image_size)),
+        ]
+    )
+    image_preprocess = transforms.Compose(
+        [
+            transforms.Resize((512, 512)),
+            transforms.ToTensor()
+        ]
+    )
     sketch = preprocess(Image.open(sketch_path).convert("RGB"))
     masks,labels = grounded_sam.grounded_sam_pipeline(sketch, object_prompt, device)
 
@@ -73,5 +74,141 @@ def sketches_guide_scene_gen(
         seed = seed
     )
 
+def parse_arguments():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Sketch-Guided Scene Image Generation",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    
+    # Required arguments
+    parser.add_argument(
+        "--sketch_path", 
+        type=str, 
+        required=True,
+        help="Path to the input sketch image"
+    )
+    parser.add_argument(
+        "--global_prompt", 
+        type=str, 
+        required=True,
+        help="Global prompt describing the entire scene (e.g., 'A photo of a bread and a cup of tea in a tray.')"
+    )
+    parser.add_argument(
+        "--object_prompt", 
+        type=str, 
+        required=True,
+        help="Object detection prompt with objects separated by dots (e.g., '. bread . cup of tea . .')"
+    )
+    parser.add_argument(
+        "--bg_prompt", 
+        type=str, 
+        required=True,
+        help="Background prompt describing the setting (e.g., 'in a tray')"
+    )
+    
+    # Optional arguments
+    parser.add_argument(
+        "--num_epochs", 
+        type=int, 
+        default=50,
+        help="Number of fine-tuning epochs"
+    )
+    parser.add_argument(
+        "--lr", 
+        type=float, 
+        default=1e-5,
+        help="Learning rate for fine-tuning"
+    )
+    parser.add_argument(
+        "--alpha", 
+        type=float, 
+        default=0.8,
+        help="Alpha parameter for scene composition"
+    )
+    parser.add_argument(
+        "--num_inference_steps", 
+        type=int, 
+        default=50,
+        help="Number of inference steps for diffusion"
+    )
+    parser.add_argument(
+        "--guidance_scale", 
+        type=float, 
+        default=7.5,
+        help="Guidance scale for diffusion"
+    )
+    parser.add_argument(
+        "--seed", 
+        type=int, 
+        default=42,
+        help="Random seed for reproducibility"
+    )
+    parser.add_argument(
+        "--device", 
+        type=str, 
+        default="auto",
+        choices=["auto", "cpu", "cuda"],
+        help="Device to use for computation"
+    )
+    
+    return parser.parse_args()
+
+def validate_inputs(args):
+    """Validate input arguments."""
+    # Check if sketch file exists
+    if not os.path.exists(args.sketch_path):
+        print(f"Error: Sketch file '{args.sketch_path}' does not exist.")
+        sys.exit(1)
+    
+    # Check if sketch file is an image
+    try:
+        Image.open(args.sketch_path)
+    except Exception as e:
+        print(f"Error: Cannot open '{args.sketch_path}' as an image: {e}")
+        sys.exit(1)
+    
+    # Validate device
+    if args.device == "auto":
+        args.device = "cuda" if torch.cuda.is_available() else "cpu"
+    elif args.device == "cuda" and not torch.cuda.is_available():
+        print("Warning: CUDA not available, falling back to CPU")
+        args.device = "cpu"
+    
+    print(f"Using device: {args.device}")
+    return args
+
 if __name__ == "__main__":
-    sketches_guide_scene_gen(image_path, global_prompt, object_prompt, bg_prompt)
+    # Parse command-line arguments
+    args = parse_arguments()
+    
+    # Validate inputs
+    args = validate_inputs(args)
+    
+    print("Starting Sketch-Guided Scene Image Generation...")
+    print(f"Sketch path: {args.sketch_path}")
+    print(f"Global prompt: {args.global_prompt}")
+    print(f"Object prompt: {args.object_prompt}")
+    print(f"Background prompt: {args.bg_prompt}")
+    print(f"Device: {args.device}")
+    
+    try:
+        # Run the main pipeline
+        sketches_guide_scene_gen(
+            sketch_path=args.sketch_path,
+            global_prompt=args.global_prompt,
+            object_prompt=args.object_prompt,
+            bg_prompt=args.bg_prompt,
+            num_epochs=args.num_epochs,
+            lr=args.lr,
+            alpha=args.alpha,
+            num_inference_steps=args.num_inference_steps,
+            guidance_scale=args.guidance_scale,
+            seed=args.seed,
+            device=args.device
+        )
+        print("Generation completed successfully!")
+        
+    except Exception as e:
+        print(f"Error during generation: {e}")
+        sys.exit(1)

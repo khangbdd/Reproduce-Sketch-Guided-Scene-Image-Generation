@@ -1,0 +1,24 @@
+# Core dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+diffusers>=0.18.0
+accelerate>=0.20.0
+
+# Image processing
+Pillow>=9.0.0
+opencv-python>=4.5.0
+
+# Scientific computing
+numpy>=1.21.0
+matplotlib>=3.5.0
+
+# Model optimization
+bitsandbytes>=0.39.0
+
+# Progress bars
+tqdm>=4.65.0
+
+# Additional dependencies for specific models
+scipy>=1.9.0
+safetensors>=0.3.0
